@@ -4,9 +4,38 @@ $dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
 $dotenv->load();
 
 $message = "";
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['query'])) {
     $message = $_POST['query'];
-}
+
+
+$array =[
+
+];
+$fp = fopen('cronologia.csv', 'a');
+fputcsv($fp, ["user", $message], ',', '"');
+
+
+fclose($fp);
+$fp = fopen('cronologia.csv', 'r');
+$data = fgetcsv($fp, 0, ",");
+ while (($data = fgetcsv($fp, 0, ",")) !== FALSE) {
+
+    $associativo = [
+        "role" => $data[0],
+        "content" =>$data[1] 
+    ];
+
+    $array[
+        
+    ]=$associativo;
+
+
+
+ }
+fclose($fp);
+
+
 
 $apiKey = $_ENV['GROQ_API_KEY'] ? $_ENV['GROQ_API_KEY'] : getenv('GROQ_API_KEY');
 
@@ -14,19 +43,14 @@ $url = "https://api.groq.com/openai/v1/chat/completions";
 
 $data = [
     "model" => "llama-3.3-70b-versatile",
-    "messages" => [
-        [
-            "role" => "system",
-            "content" => "Sei un assistente utile e conciso che rispone in italiano."
-        ],
-        [
-            "role" => "user",   
-            "content" => "$message"
-        ],
-    ],
+    "messages" => $array,
     "temperature" => 0
 
 ];
+
+ echo "<pre>";
+ print_r ($data);
+ echo "</pre>";
 
 $ch = curl_init($url);
 
@@ -52,7 +76,7 @@ curl_close($ch);
 // Decodifica JSON
 $result = json_decode($response, true);
 
-
+}
 
 
 
@@ -83,8 +107,15 @@ $result = json_decode($response, true);
         }else {
             echo "Inserisci una domanda per ricevere una risposta.<br>";
         }   
-
+        // var_dump($result);
         if (isset($result['choices'][0]['message']['content'])) {
+            $fp = fopen('cronologia.csv', 'a');
+            fputcsv($fp, ["assistant", $result['choices'][0]['message']['content']], ',', '"');
+
+
+            fclose($fp);
+
+
             echo nl2br(htmlspecialchars($result['choices'][0]['message']['content']));
         } else {
             echo "Nessuna risposta ricevuta.";
